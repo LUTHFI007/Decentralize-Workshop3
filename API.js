@@ -17,19 +17,28 @@ let products = [
 ];
 let nextProductId = 4; // Auto-increment ID for new products
 
-// Helper function to find a product by ID
+let orders = []; // List of all orders
+let carts = {};  // User-specific shopping carts (key: userId, value: cart)
+
+// Helper functions
 function getProductById(id) {
     return products.find(product => product.id === parseInt(id));
 }
 
-// Helper function to validate product data
 function validateProductData(data) {
-    return data.name && data.description && data.price !== undefined && data.category && data.inStock !== undefined;
+    return data.name && data.description && data.price !== undefined && data.category !== undefined && data.inStock !== undefined;
 }
 
-// Routes
+function calculateTotalPrice(items) {
+    return items.reduce((total, item) => {
+        const product = getProductById(item.productId);
+        return total + (product ? product.price * item.quantity : 0);
+    }, 0);
+}
 
-// GET /products - Retrieve all products
+// Products Routes
+
+// GET /products - Retrieve all products with optional filters
 app.get('/products', (req, res) => {
     const { category, inStock } = req.query;
 
@@ -101,6 +110,133 @@ app.delete('/products/:id', (req, res) => {
     products.splice(productIndex, 1);
 
     res.json({ message: 'Product deleted successfully' });
+});
+
+// Orders Routes
+
+// POST /orders - Create a new order
+app.post('/orders', (req, res) => {
+    const { userId, items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Invalid order items' });
+    }
+
+    try {
+        const orderItems = items.map(item => {
+            const product = getProductById(item.productId);
+            if (!product || !product.inStock) {
+                throw new Error(`Product ${item.productId} is not available`);
+            }
+            return { productId: product.id, quantity: item.quantity, price: product.price };
+        });
+
+        const totalPrice = calculateTotalPrice(orderItems);
+        const orderId = orders.length + 1;
+
+        const newOrder = {
+            id: orderId,
+            userId,
+            items: orderItems,
+            totalPrice,
+            status: 'placed'
+        };
+
+        orders.push(newOrder);
+
+        res.status(201).json(newOrder);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// GET /orders/:userId - Retrieve all orders for a user
+app.get('/orders/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const userOrders = orders.filter(order => order.userId === userId);
+
+    res.json(userOrders);
+});
+
+// Cart Routes
+
+// POST /cart/:userId - Add a product to the user's cart
+app.post('/cart/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const { productId, quantity } = req.body;
+
+    if (!productId || !quantity || quantity <= 0) {
+        return res.status(400).json({ error: 'Invalid product or quantity' });
+    }
+
+    const product = getProductById(productId);
+    if (!product || !product.inStock) {
+        return res.status(400).json({ error: `Product ${productId} is not available` });
+    }
+
+    if (!carts[userId]) {
+        carts[userId] = [];
+    }
+
+    const cartItemIndex = carts[userId].findIndex(item => item.productId === parseInt(productId));
+    if (cartItemIndex !== -1) {
+        carts[userId][cartItemIndex].quantity += quantity;
+    } else {
+        carts[userId].push({ productId: parseInt(productId), quantity });
+    }
+
+    const cartTotalPrice = calculateTotalPrice(carts[userId]);
+
+    res.json({
+        cart: carts[userId],
+        totalPrice: cartTotalPrice
+    });
+});
+
+// GET /cart/:userId - Retrieve the user's cart
+app.get('/cart/:userId', (req, res) => {
+    const userId = req.params.userId;
+    const userCart = carts[userId] || [];
+
+    const cartWithDetails = userCart.map(item => {
+        const product = getProductById(item.productId);
+        return {
+            ...product,
+            quantity: item.quantity,
+            subtotal: product.price * item.quantity
+        };
+    });
+
+    const cartTotalPrice = calculateTotalPrice(userCart);
+
+    res.json({
+        cart: cartWithDetails,
+        totalPrice: cartTotalPrice
+    });
+});
+
+// DELETE /cart/:userId/item/:productId - Remove a product from the user's cart
+app.delete('/cart/:userId/item/:productId', (req, res) => {
+    const userId = req.params.userId;
+    const productId = parseInt(req.params.productId);
+
+    if (!carts[userId]) {
+        return res.status(404).json({ error: 'Cart not found for this user' });
+    }
+
+    const cartIndex = carts[userId].findIndex(item => item.productId === productId);
+    if (cartIndex === -1) {
+        return res.status(404).json({ error: 'Product not found in cart' });
+    }
+
+    carts[userId].splice(cartIndex, 1);
+
+    const cartTotalPrice = calculateTotalPrice(carts[userId]);
+
+    res.json({
+        cart: carts[userId],
+        totalPrice: cartTotalPrice
+    });
 });
 
 // Start the server
