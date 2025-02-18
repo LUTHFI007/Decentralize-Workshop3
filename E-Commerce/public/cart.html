@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">MyG ELectronics</a>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html">🏠 Home</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h2 class="text-center">Your Cart</h2>
+        <div id="cart-list" class="row">
+            <!-- Cart items will be dynamically inserted here -->
+        </div>
+        <div class="text-center mt-4">
+            <button class="btn btn-danger" onclick="clearCart()">Clear Cart</button>
+            <a href="checkout.html" class="btn btn-primary">Proceed to Checkout</a>
+        </div>
+    </div>
+
+    <script src="js/cart.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.hero {
+    background: url('https://source.unsplash.com/1600x900/?shopping') no-repeat center;
+    height: 293px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    max-width: 900px;
+}

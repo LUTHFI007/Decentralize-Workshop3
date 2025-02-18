@@ -1,6 +1,7 @@
 const express = require('express');
 const connectDB = require("./db");
 const cors = require("cors");
+const path = require('path');
 
 const PORT = 3003;
 
@@ -29,5 +30,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running at: http://localhost:${3003}`);
+    console.log(`Server running at: http://localhost:${PORT}`);
 });
